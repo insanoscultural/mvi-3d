@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MVI-3D — Museu Virtual Insanos</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050505;color:#eee;font-family:Arial,sans-serif}
+canvas{display:block;width:100%;height:100%}
+.ui{position:fixed;z-index:20;pointer-events:none}
+button,.panel,.brand{pointer-events:auto}
+.brand{top:max(12px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+width:min(430px,58vw);padding:10px 14px;text-align:center;border:1px solid #8c6425;
+border-radius:14px;background:rgba(5,5,5,.78);box-shadow:0 8px 30px #000}
+.brand .big{font-size:24px;font-weight:800;color:#e6bf68;letter-spacing:2px}
+.brand .sub{font-size:13px;margin-top:5px;letter-spacing:1px}
+.info{left:12px;top:max(12px,env(safe-area-inset-top));padding:12px 18px;border:1px solid #8c6425;
+border-radius:12px;background:rgba(5,5,5,.78);font-weight:700}
+.menu{right:12px;top:max(12px,env(safe-area-inset-top));padding:12px 18px;border:1px solid #8c6425;
+border-radius:12px;background:rgba(5,5,5,.78);font-weight:700}
+.tour{left:12px;top:105px;width:min(310px,68vw);padding:12px;border:1px solid #8c6425;
+border-radius:14px;background:rgba(5,5,5,.80)}
+.tour h3{margin:0 0 6px;color:#e6bf68;font-size:17px}
+.tour p{margin:4px 0;font-size:13px;line-height:1.35}
+.progress{height:5px;background:#333;border-radius:5px;margin-top:9px;overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:#d4a63c}
+.paths{right:12px;top:52%;transform:translateY(-50%);width:min(255px,36vw);padding:14px;
+border:1px solid #8c6425;border-radius:14px;background:rgba(5,5,5,.84)}
+.paths h3{margin:0 0 8px;color:#e6bf68;font-size:16px}
+.paths div{padding:8px 0;border-bottom:1px solid rgba(160,120,50,.25);font-size:13px}
+.paths div:last-child{border:0}
+.controls{left:0;right:0;bottom:max(14px,env(safe-area-inset-bottom));display:flex;justify-content:center;gap:12px}
+.controls button,.audio{border:1px solid #8c6425;background:rgba(5,5,5,.82);color:#eee;
+border-radius:12px;padding:11px 16px;font-weight:700}
+.joy{position:fixed;z-index:22;left:18px;bottom:max(18px,env(safe-area-inset-bottom));width:150px;height:150px;
+border:1px solid #8c6425;border-radius:50%;background:rgba(20,20,20,.38);pointer-events:auto}
+.stick{position:absolute;left:50%;top:50%;width:58px;height:58px;transform:translate(-50%,-50%);
+border-radius:50%;background:rgba(170,130,50,.48);border:1px solid #c79b4c}
+.look{position:fixed;z-index:21;right:0;bottom:0;width:65%;height:48%;pointer-events:auto}
+.audio{position:fixed;z-index:30;right:12px;bottom:120px;color:#e6bf68}
+.notice{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);z-index:20;
+font-size:11px;color:#aaa;text-align:center;width:min(700px,90vw);pointer-events:none}
+.enter{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+background:radial-gradient(circle,rgba(40,30,12,.92),rgba(0,0,0,.97));pointer-events:auto}
+.enter .box{width:min(420px,88vw);text-align:center;border:1px solid #a4772c;border-radius:18px;padding:26px;
+background:rgba(5,5,5,.92);box-shadow:0 15px 60px #000}
+.enter h1{color:#e6bf68;margin:0 0 8px}.enter p{color:#ddd;line-height:1.45}
+.enter button{padding:13px 22px;border:1px solid #a4772c;border-radius:12px;background:#18130b;color:#e6bf68;font-weight:800}
+@media(max-width:700px){
+ .brand{width:58vw}.paths{width:38vw}.paths div{font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<div id="enter" class="enter">
+ <div class="box">
+  <h1>MVI-3D</h1>
+  <p>Museu Virtual Insanos — protótipo navegável.</p>
+  <p>Toque para entrar. A trilha sonora será iniciada pelo seu navegador.</p>
+  <button id="enterBtn">ENTRAR NO MUSEU</button>
+ </div>
+</div>
+
+<div class="ui brand"><div class="big">MVI-3D</div><div class="sub">MUSEU VIRTUAL INSANOS — 3D</div></div>
+<button class="ui info">ⓘ<br>INFO</button>
+<button class="ui menu">☰<br>MENU</button>
+
+<div class="ui tour">
+ <h3>AUTO TOUR INICIAL — 15s</h3>
+ <p id="tourText">Apresentação do átrio central e da caveira.</p>
+ <button id="skip" class="controls" style="position:static;display:inline-block;margin-top:6px">⏭ PULAR TOUR</button>
+ <div class="progress"><i id="tourBar"></i></div>
+</div>
+
+<div class="ui paths">
+ <h3>ESTRADAS TEMÁTICAS</h3>
+ <div>◆ ATOS</div><div>◆ EXPEDIÇÕES</div><div>◆ CULTURA</div>
+ <div>◆ HOMENAGEM PÓSTUMA</div><div>◆ MEMÓRIA</div><div>◆ VOZES</div>
+ <div>◆ O COLETE</div><div>◆ ORIGEM</div>
+</div>
+
+<button id="audioBtn" class="audio">♫ TRILHA: ON</button>
+
+<div class="joy"><div class="stick"></div></div>
+<div class="look"></div>
+
+<div class="controls">
+ <button id="center">◎ CENTRALIZAR</button>
+ <button id="run">🏃 CORRER</button>
+</div>
+<div class="notice">Imagens e elementos contendo referências ao escudo oficial são provisórios e intencionalmente modificados, para não comprometer a instituição. Proponente e idealizador: Insanoscultural.</div>
+
+<audio id="mviAudio" src="MVI-3D_Oracao_da_Estrada_Derradeira_27s.mp3" loop preload="auto"></audio>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x020202);
+scene.fog=new THREE.FogExp2(0x020202,.018);
+
+const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,200);
+camera.position.set(0,3.2,13);
+
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+document.body.prepend(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xb99a55,0x080808,1.8));
+const key=new THREE.DirectionalLight(0xffd98a,4.5); key.position.set(4,8,7); key.castShadow=true; scene.add(key);
+const rim=new THREE.PointLight(0x8b641f,7,25); rim.position.set(-5,4,3); scene.add(rim);
+
+const gold=new THREE.MeshStandardMaterial({color:0xb28a42,metalness:.72,roughness:.28});
+const darkGold=new THREE.MeshStandardMaterial({color:0x6d5123,metalness:.75,roughness:.3});
+const bone=new THREE.MeshStandardMaterial({color:0xc5b78f,metalness:.22,roughness:.58});
+const black=new THREE.MeshStandardMaterial({color:0x010101,roughness:.9});
+
+function mesh(g,m,p,s){
+ const o=new THREE.Mesh(g,m); o.position.set(...p); if(s)o.scale.set(...s); o.castShadow=true;o.receiveShadow=true;scene.add(o);return o;
+}
+function box(w,h,d,m,p,s){return mesh(new THREE.BoxGeometry(w,h,d),m,p,s)}
+function sphere(r,m,p,s){return mesh(new THREE.SphereGeometry(r,32,24),m,p,s)}
+function cyl(r1,r2,h,m,p,rot=[0,0,0]){const o=mesh(new THREE.CylinderGeometry(r1,r2,h,32),m,p);o.rotation.set(...rot);return o}
+
+// floor and pedestal
+cyl(8.8,8.8,.18,darkGold,[0,-.12,0]);
+cyl(5.2,5.2,.35,black,[0,.05,0]);
+cyl(4.6,4.25,.28,gold,[0,.27,0]);
+cyl(4.0,3.75,.35,black,[0,.55,0]);
+
+// thematic roads
+for(let i=0;i<8;i++){
+ const a=i*Math.PI/4;
+ const road=box(.10,.025,17,gold,[Math.sin(a)*8,.02,Math.cos(a)*8]);
+ road.rotation.y=a;
+}
+for(let r of [2.5,5.5,8.5]){
+ const ring=new THREE.Mesh(new THREE.RingGeometry(r,r+.025,96),gold);
+ ring.rotation.x=-Math.PI/2; ring.position.y=.03; scene.add(ring);
+}
+
+// rooms around the atrium
+for(let i=0;i<8;i++){
+ const a=i*Math.PI/4, x=Math.sin(a)*10, z=Math.cos(a)*10;
+ const room=box(3,.16,2.2,darkGold,[x,1.0,z]);
+ room.rotation.y=a;
+ const sign=box(2.0,.8,.08,black,[x,1.55,z]);
+ sign.rotation.y=a;
+}
+
+// --- 3D skull: more recognizable, with cranium, jaw, eye sockets, nose and teeth ---
+const skull=new THREE.Group();
+scene.add(skull);
+skull.position.set(0,2.05,0);
+
+const cranium=new THREE.Mesh(new THREE.SphereGeometry(2.15,48,36),bone);
+cranium.scale.set(1.02,1.12,.88); cranium.castShadow=true; skull.add(cranium);
+
+// cheek bones
+for(const x of [-1.35,1.35]){
+ const c=new THREE.Mesh(new THREE.SphereGeometry(.72,32,24),bone);
+ c.scale.set(1.05,.7,.65); c.position.set(x,-.55,.55); c.castShadow=true; skull.add(c);
+}
+// jaw
+const jaw=new THREE.Mesh(new THREE.BoxGeometry(2.35,1.35,1.1),bone);
+jaw.position.set(0,-1.18,.15); jaw.scale.set(1,.9,1); jaw.castShadow=true; skull.add(jaw);
+const chin=new THREE.Mesh(new THREE.SphereGeometry(.62,32,24),bone);
+chin.scale.set(1,.8,.75); chin.position.set(0,-1.82,.5); chin.castShadow=true; skull.add(chin);
+
+// eye sockets
+for(const x of [-.78,.78]){
+ const e=new THREE.Mesh(new THREE.SphereGeometry(.62,32,24),black);
+ e.scale.set(1,.9,.35); e.position.set(x,.15,.78); skull.add(e);
+ // brow
+ const brow=new THREE.Mesh(new THREE.TorusGeometry(.68,.12,12,40,Math.PI),darkGold);
+ brow.rotation.x=Math.PI/2; brow.rotation.z=x<0?.15:-.15; brow.position.set(x,.78,.82); skull.add(brow);
+}
+// nasal cavity
+const nose=new THREE.Mesh(new THREE.ConeGeometry(.28,.55,5),black);
+nose.rotation.x=Math.PI/2; nose.position.set(0,-.35,.92); skull.add(nose);
+
+// mouth cavity
+const mouth=new THREE.Mesh(new THREE.BoxGeometry(1.65,.42,.18),black);
+mouth.position.set(0,-1.02,.78); skull.add(mouth);
+
+// teeth
+for(let i=0;i<9;i++){
+ for(let row=0;row<2;row++){
+  const t=new THREE.Mesh(new THREE.BoxGeometry(.13,.34,.16),bone);
+  t.position.set(-.65+i*.162,-.94-row*.27,.88); t.castShadow=true; skull.add(t);
+ }
+}
+
+// nasal bridge
+box(.22,.9,.18,bone,[0,.18,.96]).parent=skull;
+
+// temples / side details
+for(const x of [-1.9,1.9]) sphere(.28,bone,[x,-.05,.1],[1,1.3,1]);
+
+// cap / boné
+const capTop=new THREE.Mesh(new THREE.SphereGeometry(2.15,40,24,0,Math.PI*2,0,Math.PI*.52),darkGold);
+capTop.scale.set(1.08,.5,.92); capTop.position.set(0,1.72,.0); capTop.castShadow=true; skull.add(capTop);
+const visor=new THREE.Mesh(new THREE.SphereGeometry(1.35,32,20),darkGold);
+visor.scale.set(1.25,.18,.55); visor.position.set(0,1.42,1.0); visor.castShadow=true; skull.add(visor);
+// small modified cross-like graphic, intentionally abstract/provisional
+const emblem=box(.42,.42,.06,gold,[0,2.15,.82]); emblem.parent=skull;
+const emblemH=box(.68,.14,.07,gold,[0,2.15,.86]); emblemH.parent=skull;
+
+// stand spotlight
+const spot=new THREE.SpotLight(0xffd36a,12,18,Math.PI/6,.45,1);
+spot.position.set(0,8,5); spot.target=skull; scene.add(spot);
+
+// camera controls
+let yaw=0,pitch=-.05,dist=13, running=false;
+let tourActive=true,tourStart=performance.now();
+function centralize(){yaw=0;pitch=-.05;dist=13;camera.position.set(0,3.15,13);camera.lookAt(0,2.05,0)}
+function updateCamera(){
+ const x=Math.sin(yaw)*dist, z=Math.cos(yaw)*dist;
+ const y=3.2+pitch*5;
+ camera.position.set(x,y,z); camera.lookAt(0,2.05,0);
+}
+function finishTour(){tourActive=false;centralize();document.getElementById("tourText").textContent="Tour concluído. Você está diante da caveira.";document.getElementById("tourBar").style.width="100%"}
+function tourFrame(now){
+ const p=Math.min((now-tourStart)/15000,1);
+ const a=p*Math.PI*2;
+ camera.position.set(Math.sin(a)*12,4.2+Math.sin(p*Math.PI)*1.2,Math.cos(a)*12);
+ camera.lookAt(0,2.05,0);
+ document.getElementById("tourBar").style.width=(p*100)+"%";
+ document.getElementById("tourText").textContent=p<.33?"Entrada no átrio central.":p<.66?"Apresentação da caveira 3D.":"Visão das estradas e salas temáticas.";
+ if(p>=1)finishTour();
+}
+
+// joystick
+const joy=document.querySelector(".joy"),stick=document.querySelector(".stick");
+let joyId=null,dx=0,dy=0;
+joy.addEventListener("pointerdown",e=>{joyId=e.pointerId;joy.setPointerCapture(joyId);});
+joy.addEventListener("pointermove",e=>{
+ if(e.pointerId!==joyId)return;
+ const r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+ dx=Math.max(-1,Math.min(1,(e.clientX-cx)/(r.width*.34)));
+ dy=Math.max(-1,Math.min(1,(e.clientY-cy)/(r.height*.34)));
+ stick.style.transform=`translate(calc(-50% + ${dx*42}px),calc(-50% + ${dy*42}px))`;
+});
+joy.addEventListener("pointerup",()=>{joyId=null;dx=dy=0;stick.style.transform="translate(-50%,-50%)"});
+
+// look area
+let lookId=null,lx=0,ly=0;
+const look=document.querySelector(".look");
+look.addEventListener("pointerdown",e=>{lookId=e.pointerId;lx=e.clientX;ly=e.clientY;look.setPointerCapture(lookId)});
+look.addEventListener("pointermove",e=>{
+ if(e.pointerId!==lookId||tourActive)return;
+ yaw-=(e.clientX-lx)*.008; pitch+=(e.clientY-ly)*.004; pitch=Math.max(-.45,Math.min(.45,pitch)); lx=e.clientX;ly=e.clientY;
+});
+look.addEventListener("pointerup",()=>lookId=null);
+
+document.getElementById("center").onclick=centralize;
+document.getElementById("skip").onclick=finishTour;
+document.getElementById("run").onclick=()=>running=!running;
+
+const audio=document.getElementById("mviAudio"),audioBtn=document.getElementById("audioBtn");
+let audioOn=true;
+function startAudio(){if(audioOn)audio.play().catch(()=>{})}
+document.getElementById("enterBtn").onclick=()=>{document.getElementById("enter").style.display="none";startAudio();};
+window.addEventListener("pointerdown",startAudio,{once:true});
+audioBtn.onclick=e=>{
+ e.stopPropagation(); audioOn=!audioOn;
+ if(audioOn){audio.play().catch(()=>{});audioBtn.textContent="♫ TRILHA: ON";}
+ else{audio.pause();audioBtn.textContent="♫ TRILHA: OFF";}
+};
+
+function animate(now){
+ requestAnimationFrame(animate);
+ if(tourActive)tourFrame(now);
+ else{
+  const speed=running?.16:.075;
+  const f=new THREE.Vector3(Math.sin(yaw),0,-Math.cos(yaw));
+  const r=new THREE.Vector3(Math.cos(yaw),0,Math.sin(yaw));
+  if(Math.abs(dx)+Math.abs(dy)>.05){
+   const move=f.clone().multiplyScalar(-dy*speed).add(r.clone().multiplyScalar(dx*speed));
+   camera.position.add(move);
+  }
+  updateCamera();
+ }
+ renderer.render(scene,camera);
+}
+requestAnimationFrame(animate);
+addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+centralize();
+</script>
+</body>
+</html>
